@@ -108,6 +108,10 @@ namespace EtapaApp
 
             this.Activated += MainWindow_Activated;
 
+            // *** MELHORIA ***
+            // Adiciona um manipulador de eventos para atualizar o estado da aba "Início" sempre que a coleção de abas mudar.
+            MainTabView.TabItemsChanged += (s, e) => UpdateHomeTabClosableState();
+
             InitializeOfflineSystem();
             InitializeProfileSystem();
             CheckWebViewInitialization();
@@ -127,6 +131,25 @@ namespace EtapaApp
         }
 
         #region Sistema de Abas e Navegação
+
+        /// <summary>
+        /// *** MELHORIA ***
+        /// Controla se a aba "Início" pode ser fechada.
+        /// Ela só pode ser fechada se for a única aba aberta.
+        /// </summary>
+        private void UpdateHomeTabClosableState()
+        {
+            // Encontra a aba "Início" usando sua tag base "home".
+            var homeTab = MainTabView.TabItems
+                .OfType<TabViewItem>()
+                .FirstOrDefault(tab => (tab.Tag as string)?.StartsWith("home_") ?? false);
+
+            if (homeTab != null)
+            {
+                // Permite fechar a aba "Início" somente se ela for a única aba.
+                homeTab.IsClosable = MainTabView.TabItems.Count == 1;
+            }
+        }
 
         private void NavView_ItemInvoked(NavigationView sender, NavigationViewItemInvokedEventArgs args)
         {
@@ -406,7 +429,7 @@ namespace EtapaApp
                 Debug.WriteLine("✅ [Init] WebView pronto, configurando aba inicial...");
                 await Task.Delay(500);
 
-                // Aba inicial agora é fechável
+                // A lógica de fechamento da aba inicial agora é controlada dinamicamente por UpdateHomeTabClosableState.
                 AddNewTab("Início", "home", isClosable: true);
 
                 Debug.WriteLine("✅ [Init] Inicialização completa");

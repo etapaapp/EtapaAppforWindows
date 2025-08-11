@@ -15,13 +15,13 @@ using Windows.Storage.Pickers;
 using System.Runtime.InteropServices;
 using HttpClient = System.Net.Http.HttpClient;
 using HttpStatusCode = System.Net.HttpStatusCode;
-using Microsoft.UI.Xaml.Navigation;
+using Microsoft.UI.Xaml.Navigation; // Adicionado para NavigationCacheMode
 
 namespace EtapaApp
 {
     public sealed partial class ProvasAntigasPage : Page
     {
-        private const string GITHUB_PAT = "xxxxxxx";
+        private const string GITHUB_PAT = "xxxxxx";
         private const string GITHUB_API_BASE = "https://api.github.com";
         private const string REPO_OWNER = "etapaapp";
         private const string REPO_NAME = "schooltests";
