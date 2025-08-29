@@ -383,8 +383,8 @@ namespace EtapaApp
             }
 
             string[] webViewTags = {
-                "home", "boletins_simulados", "cardapio", "detalhes_provas", "ead",
-                "enviar_redacao", "info_escreve_etapa", "minhas_redacoes",
+                "home", "boletins_simulados", "cardapio", "ead","detalhes_provas",
+                "enviar_redacao", "info_escreve_etapa","link_enem", "minhas_redacoes",
                 "etapa_digital", "etapa_link", "material_complementar",
                 "perfil", "provas_gabaritos", "redacao_semanal", "relatorio_evolucao"
             };
@@ -403,6 +403,7 @@ namespace EtapaApp
                 case "enviar_redacao": return "https://areaexclusiva.colegioetapa.com.br/escreve-etapa/enviar-redacao";
                 case "info_escreve_etapa": return "https://areaexclusiva.colegioetapa.com.br/escreve-etapa/informacoes";
                 case "minhas_redacoes": return "https://areaexclusiva.colegioetapa.com.br/escreve-etapa/minhas-redacoes";
+                case "link_enem": return "https://areaexclusiva.colegioetapa.com.br/link-enem";
                 case "etapa_digital": return "https://areaexclusiva.colegioetapa.com.br/etapa-digital";
                 case "etapa_link": return "https://areaexclusiva.colegioetapa.com.br/etapa-link";
                 case "material_complementar": return "https://areaexclusiva.colegioetapa.com.br/material-complementar";

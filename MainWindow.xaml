@@ -47,6 +47,7 @@
                 <controls:NavigationViewItem Icon="Help" Content="Escreve Etapa (informações)" Tag="info_escreve_etapa" />
                 <controls:NavigationViewItem Icon="Edit" Content="Escreve Etapa (enviar redação)" Tag="enviar_redacao" />
                 <controls:NavigationViewItem Icon="ShowResults" Content="Escreve Etapa (ver redação)" Tag="minhas_redacoes" />
+                <controls:NavigationViewItem Icon="Edit" Content="Link ENEM" Tag="link_enem" />
                 <controls:NavigationViewItem Icon="Library" Content="Etapa Digital" Tag="etapa_digital" />
                 <controls:NavigationViewItem Icon="Account" Content="Etapa Link" Tag="etapa_link" />
                 <controls:NavigationViewItem Icon="Library" Content="Material Complementar" Tag="material_complementar" />
