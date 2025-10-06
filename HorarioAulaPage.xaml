@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Page
+    x:Class="EtapaApp.HorarioAulaPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Cabeçalho da página -->
+        <Border Grid.Row="0" 
+                Background="{ThemeResource AcrylicBackgroundFillColorBaseBrush}"
+                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                BorderThickness="0,0,0,1"
+                Padding="24,16">
+            <TextBlock Text="Horário de Aula" 
+                       Style="{ThemeResource TitleTextBlockStyle}"
+                       FontWeight="SemiBold"
+                       Foreground="{ThemeResource TextFillColorPrimaryBrush}"/>
+        </Border>
+
+        <!-- Banner de status (abaixo do título) -->
+        <InfoBar x:Name="StatusBar"
+                 Grid.Row="1"
+                 IsOpen="False"
+                 Margin="12,12,12,0"
+                 HorizontalAlignment="Stretch"
+                 VerticalAlignment="Top"
+                 Title="Status"
+                 IsIconVisible="True"
+                 Background="{ThemeResource SystemFillColorAttentionBackgroundBrush}"
+                 BorderBrush="{ThemeResource SystemFillColorAttentionBrush}"/>
+
+        <!-- Espaçamento -->
+        <Border Grid.Row="2" Height="4"/>
+
+        <!-- Conteúdo principal -->
+        <Grid Grid.Row="3">
+            <!-- Centralização vertical e horizontal -->
+            <ScrollViewer x:Name="TableScrollViewer"
+                          ZoomMode="Disabled"
+                          HorizontalScrollMode="Auto"
+                          HorizontalScrollBarVisibility="Auto"
+                          VerticalScrollMode="Auto"
+                          VerticalScrollBarVisibility="Auto"
+                          Visibility="Visible">
+                <!-- Centralização vertical -->
+                <Grid VerticalAlignment="Center" HorizontalAlignment="Center">
+                    <!-- Card container para a tabela -->
+                    <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                            BorderThickness="1"
+                            CornerRadius="8"
+                            Padding="0"
+                            MinWidth="800"
+                            MaxWidth="1600">
+                        <!-- Grid principal da tabela -->
+                        <Grid x:Name="HorariosGrid" 
+                              Margin="1"
+                              Background="Transparent"/>
+                    </Border>
+                </Grid>
+            </ScrollViewer>
+
+            <!-- Container para mensagem de "sem aulas" -->
+            <Border x:Name="MessageContainer"
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="48,32"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Visibility="Collapsed">
+                <TextBlock x:Name="MessageText"
+                           Style="{ThemeResource BodyStrongTextBlockStyle}"
+                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                           TextWrapping="Wrap"
+                           TextAlignment="Center"/>
+            </Border>
+        </Grid>
+
+        <!-- Overlay de carregamento -->
+        <Border x:Name="LoadingOverlay" 
+                Grid.RowSpan="4"
+                Background="{ThemeResource AcrylicInAppFillColorDefaultBrush}"
+                Visibility="Collapsed">
+            <StackPanel HorizontalAlignment="Center" 
+                        VerticalAlignment="Center"
+                        Spacing="16">
+                <ProgressRing IsActive="True" 
+                              Width="48" 
+                              Height="48"
+                              Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"/>
+                <TextBlock Text="Carregando horários..." 
+                           Style="{ThemeResource BodyTextBlockStyle}"
+                           Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                           HorizontalAlignment="Center"/>
+            </StackPanel>
+        </Border>
+    </Grid>
+</Page>

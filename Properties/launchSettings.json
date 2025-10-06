@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "EtapaApp (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "EtapaApp (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}

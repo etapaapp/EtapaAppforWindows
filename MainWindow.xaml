@@ -1,0 +1,79 @@
+<Window
+    x:Class="EtapaApp.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:Microsoft.UI.Xaml.Controls"
+    Title="EtapaApp">
+    <Grid x:Name="RootGrid">
+        <Grid.Resources>
+            <SolidColorBrush x:Key="NavigationViewItemBackgroundSelected" Color="Transparent" />
+            <SolidColorBrush x:Key="NavigationViewItemBackgroundSelectedPointerOver" Color="Transparent" />
+            <SolidColorBrush x:Key="NavigationViewItemBackgroundSelectedPressed" Color="Transparent" />
+            <SolidColorBrush x:Key="NavigationViewSelectionIndicatorForeground" Color="Transparent" />
+            <Thickness x:Key="NavigationViewItemIconBoxMargin">0,12,16,12</Thickness>
+        </Grid.Resources>
+
+        <controls:NavigationView
+            x:Name="NavView"
+            ItemInvoked="NavView_ItemInvoked"
+            IsBackButtonVisible="Auto"
+            BackRequested="NavView_BackRequested"
+            IsSettingsVisible="False"
+            IsPaneOpen="False"
+            PaneDisplayMode="LeftCompact">
+
+            <controls:NavigationView.Resources>
+                <Style TargetType="ScrollBar">
+                    <Setter Property="Visibility" Value="Collapsed" />
+                </Style>
+                <Style TargetType="ScrollViewer">
+                    <Setter Property="VerticalScrollBarVisibility" Value="Hidden" />
+                    <Setter Property="HorizontalScrollBarVisibility" Value="Disabled" />
+                </Style>
+            </controls:NavigationView.Resources>
+
+            <controls:NavigationView.MenuItems>
+                <!-- O item de perfil será adicionado via código -->
+                <controls:NavigationViewItem Icon="Home" Content="Início" Tag="home" />
+                <controls:NavigationViewItem Icon="Calendar" Content="Calendário de provas" Tag="calendario" />
+                <controls:NavigationViewItem Icon="Clock" Content="Horários de aula" Tag="horario" />
+                <controls:NavigationViewItem Icon="Accept" Content="Notas" Tag="notas" />
+                <controls:NavigationViewItem Icon="Library" Content="Provas e materiais dos anos anteriores" Tag="provas_antigas" />
+                <controls:NavigationViewItem Icon="Video" Content="EADs dos anos anteriores" Tag="ead_antigo" />
+                <controls:NavigationViewItem Icon="ShowResults" Content="Boletins Simulados" Tag="boletins_simulados" />
+                <controls:NavigationViewItem Icon="Help" Content="Cardápio" Tag="cardapio" />
+                <controls:NavigationViewItem Icon="ShowResults" Content="Detalhes das Provas" Tag="detalhes_provas" />
+                <controls:NavigationViewItem Icon="Video" Content="EAD" Tag="ead" />
+                <controls:NavigationViewItem Icon="Help" Content="Escreve Etapa (informações)" Tag="info_escreve_etapa" />
+                <controls:NavigationViewItem Icon="Edit" Content="Escreve Etapa (enviar redação)" Tag="enviar_redacao" />
+                <controls:NavigationViewItem Icon="ShowResults" Content="Escreve Etapa (ver redação)" Tag="minhas_redacoes" />
+                <controls:NavigationViewItem Icon="Edit" Content="Link ENEM" Tag="link_enem" />
+                <controls:NavigationViewItem Icon="Library" Content="Etapa Digital" Tag="etapa_digital" />
+                <controls:NavigationViewItem Icon="Account" Content="Etapa Link" Tag="etapa_link" />
+                <controls:NavigationViewItem Icon="Library" Content="Material Complementar" Tag="material_complementar" />
+                <controls:NavigationViewItem Icon="People" Content="Perfil" Tag="perfil" />
+                <controls:NavigationViewItem Icon="Copy" Content="Provas e Gabaritos" Tag="provas_gabaritos" />
+                <controls:NavigationViewItem Icon="Edit" Content="Redação Semanal" Tag="redacao_semanal" />
+                <controls:NavigationViewItem Icon="ShowResults" Content="Relatório de Evolução" Tag="relatorio_evolucao" />
+            </controls:NavigationView.MenuItems>
+
+            <controls:NavigationView.Content>
+                <controls:TabView
+                  x:Name="MainTabView"
+                  Margin="12,0,12,0"
+                  HorizontalAlignment="Stretch"
+                  VerticalAlignment="Stretch"
+                  IsAddTabButtonVisible="False"
+                  TabCloseRequested="MainTabView_TabCloseRequested"
+                  SelectionChanged="MainTabView_SelectionChanged"/>
+            </controls:NavigationView.Content>
+        </controls:NavigationView>
+
+        <!-- Container para exibir o WebView em tela cheia -->
+        <ContentPresenter 
+            x:Name="FullScreenContainer" 
+            Visibility="Collapsed" 
+            Background="{ThemeResource ApplicationPageBackgroundThemeBrush}" />
+
+    </Grid>
+</Window>
