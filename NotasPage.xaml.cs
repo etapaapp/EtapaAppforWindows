@@ -77,6 +77,7 @@ namespace EtapaApp
                 StatusBar.IsOpen = false;
                 bool online = IsOnline();
                 string html = null;
+                bool usedCache = false;
 
                 Debug.WriteLine($"Status de conexão: {(online ? "Online" : "Offline")}");
 
@@ -95,6 +96,7 @@ namespace EtapaApp
                             await SaveCacheAsync(html);
                             _lastHtmlTable = html; // Cache para mudanças de tema
                             ParseAndBuildTable(html);
+                            // Removida a mensagem de sucesso
                             return;
                         }
                         else
@@ -121,6 +123,7 @@ namespace EtapaApp
                         Debug.WriteLine("Cache válido encontrado. Exibindo dados salvos...");
                         _lastHtmlTable = html; // Cache para mudanças de tema
                         ParseAndBuildTable(html);
+                        usedCache = true;
 
                         var cacheAge = await GetCacheAgeAsync();
                         string ageText = cacheAge.HasValue ? $" (salvo há {FormatCacheAge(cacheAge.Value)})" : "";
@@ -133,7 +136,7 @@ namespace EtapaApp
                         {
                             ShowStatus($"Modo offline{ageText}", "Dados podem estar desatualizados", InfoBarSeverity.Informational);
                         }
-                        return;
+                        return; // Importante: sair aqui quando cache funciona
                     }
                     else
                     {
@@ -155,10 +158,11 @@ namespace EtapaApp
                     ShowStatus("Sem conexão e sem dados salvos", "Conecte-se à internet", InfoBarSeverity.Error);
                 }
 
+                // Limpar a grid se não temos dados
                 NotasGrid.Children.Clear();
                 NotasGrid.RowDefinitions.Clear();
                 NotasGrid.ColumnDefinitions.Clear();
-                _lastHtmlTable = null;
+                _lastHtmlTable = null; // Limpar cache
             }
             catch (Exception ex)
             {
@@ -181,6 +185,16 @@ namespace EtapaApp
 
             try
             {
+                // Validação básica - verifica se tem estrutura mínima de tabela
+                bool hasTable = html.Contains("<table") && html.Contains("</table>");
+
+                if (!hasTable)
+                {
+                    Debug.WriteLine("Não encontrou tags de tabela");
+                    return false;
+                }
+
+                // Validação mais detalhada com HtmlAgilityPack
                 var doc = new HtmlDocument();
                 doc.LoadHtml(html);
 
@@ -191,16 +205,22 @@ namespace EtapaApp
                     return false;
                 }
 
+                // Verifica se tem pelo menos alguns elementos de tabela
                 var allCells = table.SelectNodes(".//td | .//th");
                 bool hasContent = allCells != null && allCells.Count > 0;
 
                 Debug.WriteLine($"Validação da tabela: {allCells?.Count ?? 0} células encontradas");
+                Debug.WriteLine($"HTML é válido: {hasContent}");
+
                 return hasContent;
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"Erro na validação do HTML: {ex.Message}");
-                return html.Contains("<table") && html.Length > 1000;
+                // Em caso de erro na validação, assumir que é válido se tem tag table
+                bool fallbackValid = html.Contains("<table") && html.Length > 1000; // HTML mínimo esperado
+                Debug.WriteLine($"Usando validação fallback: {fallbackValid}");
+                return fallbackValid;
             }
         }
 
@@ -217,8 +237,10 @@ namespace EtapaApp
             try
             {
                 var connectionProfile = NetworkInformation.GetInternetConnectionProfile();
-                return connectionProfile != null &&
+                bool isConnected = connectionProfile != null &&
                     connectionProfile.GetNetworkConnectivityLevel() == NetworkConnectivityLevel.InternetAccess;
+                Debug.WriteLine($"Status de conexão verificado: {isConnected}");
+                return isConnected;
             }
             catch (Exception ex)
             {
@@ -231,14 +253,25 @@ namespace EtapaApp
         {
             try
             {
-                if (string.IsNullOrWhiteSpace(html)) return;
+                if (string.IsNullOrWhiteSpace(html))
+                {
+                    Debug.WriteLine("Tentativa de salvar HTML vazio no cache");
+                    return;
+                }
+
+                Debug.WriteLine($"Salvando cache em arquivo: {html.Length} caracteres");
 
                 var localFolder = ApplicationData.Current.LocalFolder;
+
+                // Salvar HTML
                 var htmlFile = await localFolder.CreateFileAsync(CACHE_FILENAME, CreationCollisionOption.ReplaceExisting);
                 await FileIO.WriteTextAsync(htmlFile, html);
 
+                // Salvar timestamp
                 var timestampFile = await localFolder.CreateFileAsync(CACHE_TIMESTAMP_FILENAME, CreationCollisionOption.ReplaceExisting);
                 await FileIO.WriteTextAsync(timestampFile, DateTime.Now.ToBinary().ToString());
+
+                Debug.WriteLine("Cache salvo com sucesso em arquivos");
             }
             catch (Exception ex)
             {
@@ -251,17 +284,46 @@ namespace EtapaApp
             try
             {
                 var localFolder = ApplicationData.Current.LocalFolder;
+
+                Debug.WriteLine("Verificando se arquivo de cache existe...");
+
                 var files = await localFolder.GetFilesAsync();
-                if (files.Any(f => f.Name == CACHE_FILENAME))
+                bool cacheExists = files.Any(f => f.Name == CACHE_FILENAME);
+
+                Debug.WriteLine($"Arquivo de cache existe: {cacheExists}");
+
+                if (cacheExists)
                 {
                     var htmlFile = await localFolder.GetFileAsync(CACHE_FILENAME);
-                    return await FileIO.ReadTextAsync(htmlFile);
+                    string html = await FileIO.ReadTextAsync(htmlFile);
+
+                    Debug.WriteLine($"Cache carregado do arquivo: {html?.Length ?? 0} caracteres");
+
+                    if (!string.IsNullOrEmpty(html))
+                    {
+                        Debug.WriteLine("Cache carregado com sucesso");
+                        return html;
+                    }
+                    else
+                    {
+                        Debug.WriteLine("Arquivo de cache está vazio");
+                    }
                 }
+                else
+                {
+                    Debug.WriteLine("Arquivo de cache não encontrado");
+                }
+            }
+            catch (FileNotFoundException)
+            {
+                Debug.WriteLine("Arquivo de cache não existe");
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"Erro ao carregar cache: {ex.Message}");
             }
+
+            Debug.WriteLine("Retornando null - cache não disponível");
             return null;
         }
 
@@ -271,13 +333,16 @@ namespace EtapaApp
             {
                 var localFolder = ApplicationData.Current.LocalFolder;
                 var files = await localFolder.GetFilesAsync();
+
                 if (files.Any(f => f.Name == CACHE_TIMESTAMP_FILENAME))
                 {
                     var timestampFile = await localFolder.GetFileAsync(CACHE_TIMESTAMP_FILENAME);
                     string timestampStr = await FileIO.ReadTextAsync(timestampFile);
+
                     if (long.TryParse(timestampStr, out long timestamp))
                     {
-                        return DateTime.Now - DateTime.FromBinary(timestamp);
+                        DateTime cacheTime = DateTime.FromBinary(timestamp);
+                        return DateTime.Now - cacheTime;
                     }
                 }
             }
@@ -290,10 +355,14 @@ namespace EtapaApp
 
         private string FormatCacheAge(TimeSpan age)
         {
-            if (age.TotalDays >= 1) return $"{(int)age.TotalDays} dia(s)";
-            if (age.TotalHours >= 1) return $"{(int)age.TotalHours} hora(s)";
-            if (age.TotalMinutes >= 1) return $"{(int)age.TotalMinutes} minuto(s)";
-            return "poucos segundos";
+            if (age.TotalDays >= 1)
+                return $"{(int)age.TotalDays} dia(s)";
+            else if (age.TotalHours >= 1)
+                return $"{(int)age.TotalHours} hora(s)";
+            else if (age.TotalMinutes >= 1)
+                return $"{(int)age.TotalMinutes} minuto(s)";
+            else
+                return "poucos segundos";
         }
 
         private void ShowLoadingIndicator(bool show)
@@ -303,147 +372,267 @@ namespace EtapaApp
 
         private async Task<string> FetchNotasHtmlAsync()
         {
-            var webView = WebViewPage.CurrentWebView;
-            if (webView?.CoreWebView2 == null) throw new Exception("WebView não está disponível");
+            try
+            {
+                var webView = WebViewPage.CurrentWebView;
+                if (webView?.CoreWebView2 == null)
+                {
+                    Debug.WriteLine("WebView não disponível");
+                    throw new Exception("WebView não está disponível");
+                }
 
-            var cookies = await webView.CoreWebView2.CookieManager.GetCookiesAsync(URL_NOTAS);
-            var cookieHeader = string.Join("; ", cookies.Select(c => $"{c.Name}={c.Value}"));
+                var cookies = await webView.CoreWebView2.CookieManager.GetCookiesAsync(URL_NOTAS);
+                var cookieHeader = string.Join("; ", cookies.Select(c => $"{c.Name}={c.Value}"));
+                Debug.WriteLine($"Cookies encontrados: {cookies.Count}");
 
-            using var httpClient = new HttpClient();
-            httpClient.DefaultRequestHeaders.Add("Cookie", cookieHeader);
-            httpClient.DefaultRequestHeaders.Add("User-Agent", AndroidUserAgent);
-            httpClient.Timeout = TimeSpan.FromSeconds(30);
+                using var httpClient = new HttpClient();
+                httpClient.DefaultRequestHeaders.Add("Cookie", cookieHeader);
+                httpClient.DefaultRequestHeaders.Add("User-Agent", AndroidUserAgent);
+                httpClient.Timeout = TimeSpan.FromSeconds(30); // Aumentado timeout
 
-            var response = await httpClient.GetAsync(URL_NOTAS);
-            response.EnsureSuccessStatusCode();
-            return await response.Content.ReadAsStringAsync();
+                var response = await httpClient.GetAsync(URL_NOTAS);
+                response.EnsureSuccessStatusCode();
+
+                string html = await response.Content.ReadAsStringAsync();
+                Debug.WriteLine($"HTML baixado com sucesso: {html?.Length ?? 0} caracteres");
+
+                return html;
+            }
+            catch (HttpRequestException ex)
+            {
+                Debug.WriteLine($"Erro HTTP ao buscar HTML: {ex.Message}");
+                throw new Exception($"Erro de rede: {ex.Message}");
+            }
+            catch (TaskCanceledException ex)
+            {
+                Debug.WriteLine($"Timeout ao buscar HTML: {ex.Message}");
+                throw new Exception("Tempo limite excedido");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Erro inesperado ao buscar HTML: {ex.Message}");
+                throw new Exception($"Falha ao acessar o servidor: {ex.Message}");
+            }
         }
 
         private void ParseAndBuildTable(string html)
         {
             try
             {
-                if (string.IsNullOrEmpty(html)) throw new Exception("HTML está vazio");
+                Debug.WriteLine($"=== INÍCIO ParseAndBuildTable ===");
+                Debug.WriteLine($"HTML length: {html?.Length ?? 0}");
+
+                if (string.IsNullOrEmpty(html))
+                {
+                    throw new Exception("HTML está vazio");
+                }
+
                 var doc = new HtmlDocument();
                 doc.LoadHtml(html);
+
+                // Encontra a tabela principal
                 var table = doc.DocumentNode.SelectSingleNode("//table");
-                if (table == null) throw new Exception("Tabela não encontrada no HTML");
+                if (table == null)
+                {
+                    Debug.WriteLine("Tabela não encontrada no HTML");
+                    Debug.WriteLine($"HTML snippet: {html.Substring(0, Math.Min(500, html.Length))}");
+                    throw new Exception("Tabela não encontrada no HTML");
+                }
+
+                Debug.WriteLine("Tabela encontrada, construindo interface...");
                 BuildTableFromHtml(table);
+                Debug.WriteLine("=== FIM ParseAndBuildTable (SUCESSO) ===");
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"ERRO em ParseAndBuildTable: {ex.Message}");
+                Debug.WriteLine($"=== ERRO ParseAndBuildTable: {ex.Message} ===");
+                Debug.WriteLine($"Stack trace: {ex.StackTrace}");
                 throw;
             }
         }
 
-        // *** NOVA FUNÇÃO AUXILIAR ***
-        private string ExtractNotaFromCell(HtmlNode cell)
-        {
-            if (cell == null) return "--";
-
-            var notaContainer = cell.SelectNodes(".//div[contains(@class, 'd-flex') and contains(@class, 'flex-column')]")
-                                    ?.FirstOrDefault(div =>
-                                        div.SelectSingleNode(".//span[contains(@class, 'font-weight-bold')]")
-                                           ?.InnerText.Trim().Equals("Nota", StringComparison.OrdinalIgnoreCase) ?? false
-                                    );
-
-            if (notaContainer != null)
-            {
-                return WebUtility.HtmlDecode(notaContainer.InnerText.Replace("Nota", "", StringComparison.OrdinalIgnoreCase).Trim());
-            }
-
-            return WebUtility.HtmlDecode(cell.InnerText.Trim());
-        }
-
         private void BuildTableFromHtml(HtmlNode table)
         {
+            Debug.WriteLine($"=== INÍCIO BuildTableFromHtml ===");
+
             NotasGrid.Children.Clear();
             NotasGrid.RowDefinitions.Clear();
             NotasGrid.ColumnDefinitions.Clear();
 
-            var headers = table.SelectNodes(".//thead//tr[1]//th") ?? table.SelectNodes(".//tr[th][1]//th");
-            if (headers == null || headers.Count == 0) throw new Exception("Cabeçalhos da tabela não encontrados");
+            // Obter cabeçalhos corretamente - apenas da primeira linha do thead
+            var headers = table.SelectNodes(".//thead//tr[1]//th");
 
-            // Ignorar a coluna "Matéria" (primeira coluna)
-            for (int i = 1; i < headers.Count; i++)
+            if (headers == null || headers.Count == 0)
             {
-                NotasGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+                Debug.WriteLine("Tentativa alternativa: procurar primeira linha com th");
+                var firstRowWithTh = table.SelectSingleNode(".//tr[th]");
+                if (firstRowWithTh != null)
+                {
+                    headers = firstRowWithTh.SelectNodes(".//th");
+                }
             }
 
+            if (headers == null || headers.Count == 0)
+            {
+                Debug.WriteLine("ERRO: Nenhum cabeçalho encontrado");
+                throw new Exception("Cabeçalhos da tabela não encontrados");
+            }
+
+            Debug.WriteLine($"Encontrados {headers.Count} cabeçalhos");
+
+            // Criar colunas apenas para os cabeçalhos reais
+            for (int i = 0; i < headers.Count; i++)
+            {
+                NotasGrid.ColumnDefinitions.Add(new ColumnDefinition
+                {
+                    Width = new GridLength(220)
+                });
+            }
+
+            // Adicionar linha de cabeçalho
             NotasGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-            for (int i = 1; i < headers.Count; i++)
+            for (int i = 0; i < headers.Count; i++)
             {
                 var headerText = WebUtility.HtmlDecode(headers[i].InnerText.Trim());
+                Debug.WriteLine($"Cabeçalho {i}: {headerText}");
                 var headerCell = CreateCell(headerText, true);
                 Grid.SetRow(headerCell, 0);
-                Grid.SetColumn(headerCell, i - 1);
+                Grid.SetColumn(headerCell, i);
                 NotasGrid.Children.Add(headerCell);
             }
 
+            // Processar apenas as linhas do tbody
             var dataRows = table.SelectNodes(".//tbody//tr");
-            if (dataRows == null || dataRows.Count == 0) return;
+            if (dataRows == null || dataRows.Count == 0)
+            {
+                Debug.WriteLine("AVISO: Nenhuma linha de dados encontrada no tbody");
+                return;
+            }
+
+            Debug.WriteLine($"Processando {dataRows.Count} linhas de dados do tbody");
 
             int rowIndex = 1;
-            var notaCols = Math.Max(0, headers.Count - 2);
+            var notaCols = Math.Max(0, headers.Count - 2); // Colunas de notas (excluindo Matéria e Código)
             var sums = new double[notaCols];
             var counts = new int[notaCols];
 
             foreach (var row in dataRows)
             {
                 var cells = row.SelectNodes(".//td | .//th");
-                if (cells == null || cells.Count < 2) continue;
+
+                if (cells == null || cells.Count < 2)
+                {
+                    Debug.WriteLine($"Linha ignorada: poucas células ({cells?.Count ?? 0})");
+                    continue;
+                }
 
                 NotasGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
 
-                // Começar do 1 para ignorar a coluna "Matéria"
-                for (int j = 1; j < Math.Min(cells.Count, headers.Count); j++)
+                for (int j = 0; j < Math.Min(cells.Count, headers.Count); j++)
                 {
-                    // *** LÓGICA DE EXTRAÇÃO ATUALIZADA AQUI ***
-                    string cellText = (j >= 2)
-                        ? ExtractNotaFromCell(cells[j])
-                        : WebUtility.HtmlDecode(cells[j].InnerText.Trim());
+                    var cellNode = cells[j];
+                    string cellText;
 
-                    var cell = CreateCell(cellText, j == 0); // j==0 é a coluna de matéria (cabeçalho da linha)
+                    // =========================================================================
+                    // INÍCIO DA LÓGICA CORRIGIDA para extrair apenas a nota
+                    // =========================================================================
+                    // Procura pelo container que agrupa os dados da nota (tem um span com o texto "Nota")
+                    var notaContainerNode = cellNode.SelectSingleNode(".//div[contains(@class, 'd-flex') and .//span[contains(., 'Nota')]]");
 
+                    if (notaContainerNode != null)
+                    {
+                        // Dentro do container, encontra o primeiro 'flex-column', que é sempre o da nota.
+                        var notaColumnNode = notaContainerNode.SelectSingleNode(".//div[contains(@class, 'd-flex flex-column')]");
+                        if (notaColumnNode != null)
+                        {
+                            // A nota é o último nó dentro desta coluna (pode ser um <span> ou um nó de texto).
+                            // Iteramos de trás para frente para ignorar nós de texto de espaço em branco.
+                            HtmlNode valueNode = notaColumnNode.LastChild;
+                            while (valueNode != null && valueNode.NodeType == HtmlNodeType.Text && string.IsNullOrWhiteSpace(valueNode.InnerText))
+                            {
+                                valueNode = valueNode.PreviousSibling;
+                            }
+
+                            cellText = valueNode != null
+                                ? WebUtility.HtmlDecode(valueNode.InnerText.Trim())
+                                : "--"; // Fallback se não encontrar o valor
+                        }
+                        else
+                        {
+                            cellText = "--"; // Fallback se não encontrar a estrutura de coluna
+                        }
+                    }
+                    else
+                    {
+                        // Lógica antiga para células simples (Matéria, Código)
+                        cellText = WebUtility.HtmlDecode(cellNode.InnerText.Trim());
+                    }
+                    // =========================================================================
+                    // FIM DA LÓGICA CORRIGIDA
+                    // =========================================================================
+
+                    var cell = CreateCell(cellText, false);
+
+                    // Aplicar estilo para células de nota (a partir da terceira coluna - índice 2)
                     if (j >= 2)
                     {
                         var cssClass = cells[j].GetAttributeValue("class", "");
                         ApplyCellStyling(cell, cssClass);
 
-                        var colIndex = j - 2;
-                        if (colIndex < notaCols && double.TryParse(cellText, NumberStyles.Any, CultureInfo.InvariantCulture, out double value))
+                        // Calcular média para colunas de notas
+                        if (cellText != "--")
                         {
-                            sums[colIndex] += value;
-                            counts[colIndex]++;
+                            var colIndex = j - 2;
+                            if (colIndex < notaCols && double.TryParse(cellText, NumberStyles.Any, CultureInfo.InvariantCulture, out double value))
+                            {
+                                sums[colIndex] += value;
+                                counts[colIndex]++;
+                            }
                         }
                     }
 
                     Grid.SetRow(cell, rowIndex);
-                    Grid.SetColumn(cell, j - 1);
+                    Grid.SetColumn(cell, j);
                     NotasGrid.Children.Add(cell);
                 }
                 rowIndex++;
             }
 
+            // Adicionar linha de média
             if (notaCols > 0)
             {
                 NotasGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+
                 var avgLabelCell = CreateCell("Média", true);
                 Grid.SetRow(avgLabelCell, rowIndex);
                 Grid.SetColumn(avgLabelCell, 0);
                 NotasGrid.Children.Add(avgLabelCell);
 
+                if (headers.Count > 1)
+                {
+                    var avgCodeCell = CreateCell("--", true);
+                    Grid.SetRow(avgCodeCell, rowIndex);
+                    Grid.SetColumn(avgCodeCell, 1);
+                    NotasGrid.Children.Add(avgCodeCell);
+                }
+
                 for (int k = 0; k < notaCols; k++)
                 {
-                    string avgValue = counts[k] > 0 ? (sums[k] / counts[k]).ToString("F2", CultureInfo.InvariantCulture) : "--";
+                    string avgValue = "--";
+                    if (counts[k] > 0)
+                    {
+                        avgValue = (sums[k] / counts[k]).ToString("F2", CultureInfo.InvariantCulture);
+                    }
                     var avgCell = CreateCell(avgValue, true);
                     Grid.SetRow(avgCell, rowIndex);
-                    Grid.SetColumn(avgCell, k + 1); // +1 porque a primeira coluna é o label "Média"
+                    Grid.SetColumn(avgCell, k + 2);
                     NotasGrid.Children.Add(avgCell);
                 }
             }
+
+            Debug.WriteLine($"=== FIM BuildTableFromHtml: {rowIndex} linhas, {headers.Count} colunas ===");
         }
+
 
         private Border CreateCell(string text, bool isHeader)
         {
@@ -454,16 +643,21 @@ namespace EtapaApp
                 VerticalAlignment = VerticalAlignment.Center,
                 FontWeight = isHeader ? Microsoft.UI.Text.FontWeights.SemiBold : Microsoft.UI.Text.FontWeights.Normal,
                 FontSize = isHeader ? 14 : 13,
+                // Sempre usar as propriedades dinâmicas para cores do sistema
                 Foreground = isHeader ? ColorHeaderText : ColorOnSurface,
                 Padding = new Thickness(12, 8, 12, 8),
                 TextWrapping = TextWrapping.Wrap
             };
 
-            var borderBrush = isHeader ? ColorHeaderBg : (SolidColorBrush)Application.Current.Resources["DividerStrokeColorDefaultBrush"];
+            // Sempre usar as propriedades dinâmicas para cores do sistema
+            var borderBrush = isHeader
+                ? (SolidColorBrush)Application.Current.Resources["AccentFillColorDefaultBrush"]
+                : (SolidColorBrush)Application.Current.Resources["DividerStrokeColorDefaultBrush"];
 
             return new Border
             {
                 Child = textBlock,
+                // Sempre usar as propriedades dinâmicas para cores do sistema
                 Background = isHeader ? ColorHeaderBg : ColorFundoCartao,
                 BorderBrush = borderBrush,
                 BorderThickness = new Thickness(0.5),
@@ -475,6 +669,7 @@ namespace EtapaApp
         {
             if (!(cell.Child is TextBlock textBlock)) return;
 
+            // Cores de destaque (verde, amarelo, vermelho) são fixas e não seguem o tema
             if (cssClass.Contains("bg-success"))
             {
                 cell.Background = ColorSuccess;
@@ -495,6 +690,7 @@ namespace EtapaApp
             }
         }
 
+        // Limpar recursos quando a página for destruída
         protected override void OnNavigatedFrom(Microsoft.UI.Xaml.Navigation.NavigationEventArgs e)
         {
             this.ActualThemeChanged -= OnThemeChanged;
@@ -502,3 +698,4 @@ namespace EtapaApp
         }
     }
 }
+
