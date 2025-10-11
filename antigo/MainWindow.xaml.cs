@@ -367,6 +367,7 @@ namespace EtapaApp
                 case "horario": return typeof(HorarioAulaPage);
                 case "calendario": return typeof(CalendarioPage);
                 case "provas_antigas": return typeof(ProvasAntigasPage);
+                case "ead_antigo": return typeof(EadAntigoPage);
                 default:
                     return IsWebViewTag(tag) ? typeof(WebViewPage) : null;
             }

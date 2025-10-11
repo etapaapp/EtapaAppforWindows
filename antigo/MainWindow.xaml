@@ -39,6 +39,7 @@
                 <controls:NavigationViewItem Icon="Clock" Content="Horários de aula" Tag="horario" />
                 <controls:NavigationViewItem Icon="Accept" Content="Notas" Tag="notas" />
                 <controls:NavigationViewItem Icon="Library" Content="Provas e materiais dos anos anteriores" Tag="provas_antigas" />
+                <controls:NavigationViewItem Icon="Video" Content="EADs dos anos anteriores" Tag="ead_antigo" />
                 <controls:NavigationViewItem Icon="ShowResults" Content="Boletins Simulados" Tag="boletins_simulados" />
                 <controls:NavigationViewItem Icon="Calendar" Content="Calendário anual" Tag="calendario_anual" />
                 <controls:NavigationViewItem Icon="Help" Content="Cardápio" Tag="cardapio" />
