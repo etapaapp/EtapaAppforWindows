@@ -386,7 +386,7 @@ namespace EtapaApp
                 "home", "boletins_simulados", "cardapio", "ead","detalhes_provas",
                 "enviar_redacao", "info_escreve_etapa","link_enem", "minhas_redacoes",
                 "etapa_digital", "etapa_link", "material_complementar",
-                "perfil", "provas_gabaritos", "redacao_semanal", "relatorio_evolucao"
+                "perfil", "provas_gabaritos", "redacao_semanal", "relatorio_evolucao", "calendario_anual"
             };
             return webViewTags.Contains(tag);
         }
@@ -397,6 +397,7 @@ namespace EtapaApp
             {
                 case "home": return "https://areaexclusiva.colegioetapa.com.br/home";
                 case "boletins_simulados": return "https://areaexclusiva.colegioetapa.com.br/provas/boletins-simulados";
+                case "calendario_anual": return "https://areaexclusiva.colegioetapa.com.br/calendario/anual";
                 case "cardapio": return "https://areaexclusiva.colegioetapa.com.br/cardapio";
                 case "detalhes_provas": return "https://areaexclusiva.colegioetapa.com.br/provas/detalhes";
                 case "ead": return "https://areaexclusiva.colegioetapa.com.br/ead/";
