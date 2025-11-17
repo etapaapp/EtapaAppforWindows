@@ -28,6 +28,12 @@ namespace EtapaApp
         private readonly SolidColorBrush ColorSuccess = new SolidColorBrush(Microsoft.UI.ColorHelper.FromArgb(255, 40, 167, 69));
         private readonly SolidColorBrush ColorWarning = new SolidColorBrush(Microsoft.UI.ColorHelper.FromArgb(255, 255, 193, 7));
         private readonly SolidColorBrush ColorDanger = new SolidColorBrush(Microsoft.UI.ColorHelper.FromArgb(255, 220, 53, 69));
+
+        // INÍCIO DA MODIFICAÇÃO: Novas cores para faltas
+        private readonly SolidColorBrush ColorAmber = new SolidColorBrush(Microsoft.UI.ColorHelper.FromArgb(255, 255, 111, 0)); // #FF6F00 (Laranja Escuro / Amber Darken-4)
+        private readonly SolidColorBrush ColorInfo = new SolidColorBrush(Microsoft.UI.ColorHelper.FromArgb(255, 23, 162, 184)); // #17a2b8 (Azul Claro / Bootstrap Info)
+        // FIM DA MODIFICAÇÃO
+
         private readonly SolidColorBrush ColorWhite = new SolidColorBrush(Microsoft.UI.Colors.White);
         private readonly SolidColorBrush ColorBlack = new SolidColorBrush(Microsoft.UI.Colors.Black);
 
@@ -688,6 +694,20 @@ namespace EtapaApp
                 textBlock.Foreground = ColorWhite;
                 cell.CornerRadius = new CornerRadius(4);
             }
+            // INÍCIO DA MODIFICAÇÃO: Adicionando cores de falta
+            else if (cssClass.Contains("amber")) // Classe para falta (Laranja escuro)
+            {
+                cell.Background = ColorAmber;
+                textBlock.Foreground = ColorWhite; // A classe de exemplo 'amber' usa 'text-white'
+                cell.CornerRadius = new CornerRadius(4);
+            }
+            else if (cssClass.Contains("bg-info")) // Classe para falta justificada (Azul claro)
+            {
+                cell.Background = ColorInfo;
+                textBlock.Foreground = ColorWhite; // A classe de exemplo 'bg-info' usa 'text-white'
+                cell.CornerRadius = new CornerRadius(4);
+            }
+            // FIM DA MODIFICAÇÃO
         }
 
         // Limpar recursos quando a página for destruída
@@ -698,4 +718,3 @@ namespace EtapaApp
         }
     }
 }
-
