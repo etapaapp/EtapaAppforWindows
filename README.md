@@ -22,3 +22,5 @@
 <img src="https://github.com/etapaapp/EtapaAppforWindows/blob/master/imagens/6.InstalaApp.png" width="600"/>
 8. Prossiga com a instalação, o app vai abrir automáticamente quando estiver pronto.
 <img src="https://github.com/etapaapp/EtapaAppforWindows/blob/master/imagens/7.InstalaApp.png" width="600"/>
+⚠️ ATENÇÃO!!! O app possívelmente está com bugs em relação a verficação de autenticação, caso esteja dando erro, tente a versão de Android por enquanto.... deve voltar a funcionar após a primeira nota ser lançada no sistema.
+Esse bug é simples de ser corrigido, só trocar os seletores JS no código, eu fiz isso na versão de Android, mas como atualmente sou ex-aluno e não uso Windows faz uns meses ficou difícil pra mim corrgir.... então fica aí pra quem quiser tentar.
